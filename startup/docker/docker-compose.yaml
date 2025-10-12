@@ -1,0 +1,52 @@
+services:
+  api-gateway:
+    build:
+      context: ../api-gateway
+      dockerfile: ../api-gateway/Dockerfile
+    restart: always
+    ports:
+      - '80:80'
+    environment:
+      MODE: docker
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://api-gateway:80/health/readiness']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  user-service:
+    build:
+      context: ../user-service
+      dockerfile: ../user-service/Dockerfile
+    depends_on:
+      user-postgres:
+        condition: service_healthy
+    restart: always
+    ports:
+      - '50051:50051'
+    deploy:
+      mode: replicated
+      replicas: 3
+    environment:
+      MODE: docker
+
+  user-postgres:
+    image: 'postgres:18.0'
+    ports: '5432:5432'
+    restart: always
+    environment:
+      POSTGRES_USER: user-postgres
+      POSTGRES_PASSWORD: "f0f97871-5185-419a-a101-1417fb9bfec4"
+      POSTGRES_DB: user-service-db
+    healthcheck:
+      test: pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 10s
+      timeout: 2s
+
+  redis:
+    image: redis:8.2.2
+    ports:
+      - '6379:6379'
+    environment:
+      - REDIS_PASSWORD=fb6200f3-e0c9-4228-b296-9e1d2e71439f

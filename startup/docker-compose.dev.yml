@@ -1,0 +1,78 @@
+services:
+  api-gateway:
+    build:
+      context: ./../api-gateway
+      dockerfile: ./../api-gateway/Dockerfile
+    restart: always
+    ports:
+      - '80:80'
+    # depends_on:
+    #   - authentication-service
+    # - inventory-service
+    # - order-service
+    environment:
+      MODE: docker
+      AUTH_SERVICE_NAME: testing123
+
+  # authentication-service:
+  #   build:
+  #     context: ./../authentication-service
+  #     dockerfile: ./../authentication-service/Dockerfile
+  #   depends_on:
+  #     authentication-postgres:
+  #       condition: service_healthy
+  #   restart: always
+  #   ports:
+  #     - "8001:8001"
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #   environment:
+  #     MODE: docker
+  #     POSTGRES_USER: authentication-postgres
+  #     POSTGRES_PASSWORD: password
+  #     POSTGRES_HOST: authentication-postgres
+  #     POSTGRES_PORT: "5432"
+  #     POSTGRES_DB: imsdb
+  #     SERVICE_PORT: "8001"
+
+  # authentication-postgres:
+  #   image: "postgres:14.2"
+  #   ports:
+  #     - "5432:5432"
+  #   restart: always
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #   environment:
+  #     POSTGRES_USER: authentication-postgres
+  #     POSTGRES_PASSWORD: password
+  #     POSTGRES_DB: imsdb
+  #   # volumes:
+  #   #   # using volumes instead of bind mounts
+  #   #   - postgres-authentication:/var/lib/postgresql/data
+  #   #   - ./init-db/init-authentication-db.sql:/docker-entrypoint-initdb.d/init-authentication-db.sql
+  #   healthcheck:
+  #     test: pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+  #     interval: 10s
+  #     timeout: 2s
+
+  consul:
+    image: hashicorp/consul:1.15.4
+    ports:
+      - '8500:8500' # Web UI
+      - '8600:8600/udp' # DNS interface
+    command: agent -dev -client=0.0.0.0
+
+  redis:
+    image: redis:7.4.2
+    container_name: redis
+    ports:
+      - '6379:6379'
+    environment:
+      - REDIS_PASSWORD=password
+
+volumes:
+  postgres-authentication:
+  # postgres-order:
+  mysql:

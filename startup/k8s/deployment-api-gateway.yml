@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway-deployment
+  namespace: inventory-management-system
+spec:
+  replicas: 4 # 4 pods to be created with ReplicaSet
+  selector:
+    matchLabels:
+      ims: api-gateway
+  template:
+    metadata:
+      labels:
+        ims: api-gateway # pod label
+    spec:
+      containers:
+        - name: api-gateway
+          image: localhost:5050/ims-api-gateway:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: MODE
+              value: kubernetes
+          # Ensures that the container is ready to serve traffic before routing traffic to it.
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: 80
+            initialDelaySeconds: 10 # allow 10 seconds for application to warm up
+            timeoutSeconds: 1
+            periodSeconds: 20 # how frequent probe initiates
+            failureThreshold: 5 # Number of consecutive failures before marking the pod as Unready
+          # Ensures that the container is still running. If the probe fails, Kubernetes restarts the container.
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 80
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 20
+            failureThreshold: 5 # Number of consecutive failures before restarting the pod
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25% # Maximum number of pods that can be created above the desired number of replicas, 1 in our case because 25% of 4 replicas
+      maxUnavailable: 25% # Maximum number of pods that can be unavailable during the update, ensures that at least 75% of the desired Pods are available during the update

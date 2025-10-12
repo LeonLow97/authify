@@ -1,0 +1,16 @@
+mode: "docker"
+
+server:
+  name: authentication-service
+  port: 50051
+
+jwt:
+  secret_key: 493TKVrB0r5vY0hqU3OI28iDQJKhWDkR37OXtgSn1tife3z
+  expiry: 15 # in minutes
+
+postgres:
+  user: authentication-postgres
+  password: password
+  host: authentication-postgres
+  port: 5432
+  db: imsdb

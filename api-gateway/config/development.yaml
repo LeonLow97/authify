@@ -1,0 +1,24 @@
+mode: development
+
+server:
+  base_url: 127.0.0.1
+  port: 8080
+
+user_service:
+  base_url: 127.0.0.1
+  port: 50051
+
+auth_jwt_token:
+  name: 'authify-token'
+  secret: 493TKVrB0r5vY0hqU3OI28iDQJKhWDkR37OXtgSn1tife3z
+  max_age: 3600
+  domain: 127.0.0.1
+  secure: false
+  http_only: true
+  path: '/'
+
+redis:
+  port: 6379
+  address: 127.0.0.1
+  password: ''
+  database_index: 0

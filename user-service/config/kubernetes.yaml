@@ -1,0 +1,16 @@
+mode: 'docker'
+
+server:
+  name: user-clusterip
+  port: 50051
+
+jwt:
+  secret_key: FROM_K8S
+  expiry: 15 # in minutes
+
+postgres:
+  user: FROM_K8S
+  password: FROM_K8S
+  host: FROM_K8S
+  port: 5432
+  db: FROM_K8S

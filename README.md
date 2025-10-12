@@ -1,67 +1,41 @@
-# Project Current State
+# Authify
 
-- Only API Gateway and Authentication Microservice is working.
-- Previously, all services (authentication, order and inventory) are working but currently trying to deploy 2 services to AWS so I shut down the network communication to order and inventory microservices.
-- Will be revamping the entire Microservices Architecture and deploy to AWS.
+Authify is a production-ready authentication and authorization microservice designed for modern, scalable applications.
 
-# Inventory Management System
+# Table of Contents
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Technologies](#technologies)
+- [Authify](#authify)
+- [Table of Contents](#table-of-contents)
 - [Microservices Architecture](#microservices-architecture)
 - [Project Setup](#project-setup)
-  - [Docker](#docker)
-  - [Kubernetes](#kubernetes)
-  - [AWS Deployment](#aws-deployment)
+  - [Localhost](#localhost)
+    - [Docker](#docker)
+    - [Kubernetes](#kubernetes)
+- [AWS Deployment](#aws-deployment)
+  - [AWS Elastic Beanstalk](#aws-elastic-beanstalk)
 
-## Overview
+# Microservices Architecture
 
-The Inventory Management System (IMS) is designed to assist individuals and business owners in efficiently tracking their inventory, whether for a physical store or an online shop. This system ensures that you can effortlessly manage your stock levels and make informed decisions.
+# Project Setup
 
-When a customer places an order, the inventory count is updated once the order has been processed, providing real-time visibility into available stock. The system also alerts you when inventory levels are low, enabling timely reordering of items. This proactive approach ensures that you always have sufficient stock on hand to meet customer demand.
+There are multiple ways to start authify:
 
-In addition to inventory tracking, the system records customer details during each purchase, along with cost and profit for each item sold. This comprehensive data allows you to analyze product performance by brand and category, giving you deeper insights into your inventory management or to perform other business analysis. Ultimately, this system empowers you to maintain optimal inventory levels and enhances your overall business efficiency.
+- Localhost
+- Docker
+- Local Kubernetes (Docker Desktop)
+- AWS Elastic Beanstalk
+- AWS EC2
 
-This project was originally created to support my online business at [YourHypeStore](https://www.carousell.sg/u/yourhypestore)
+Please ensure the following ports are available and not taken:
 
-## Technologies
+| Technology        | Port  |
+| ----------------- | :---: |
+| API Gateway       |  80   |
+| User Microservice | 50051 |
+| Redis             | 6379  |
+| PostgreSQL        | 5432  |
 
-| Technology   | Type                   | Version | Ports  |
-| ------------ | ---------------------- | :-----: | ------ |
-| Golang       | Language               |         |        |
-| Gin          | Framework              |         |        |
-| Gorilla Mux  | Framework              |         |        |
-| PostgreSQL   | Database               |         | `5432` |
-| MySQL        | Database               |         | `3306` |
-| Apache Kafka | Message Queue          |         |        |
-| Docker       | Containerization       |         |        |
-| Kubernetes   | Orchestration          |         |        |
-| REST         | Communication Protocol |         |        |
-| gRPC         | Communication Protocol |         |        |
-
-## Microservices Architecture
-
-1. **API Gateway**
-
-- An API Gateway is a reverse proxy that acts as a single entry point for all incoming client requests to backend services.
-- In IMS, the API Gateway accepts REST-based requests (JSON format) and forwards them to microservices via gRPC (serialized binary format) for better performance and lower overhead.
-- The **Aggregator Pattern** is utilized to collect data from multiple microservices and return a single aggregated response, reducing the number of network calls and improving response times.
-- The API Gateway in IMS implements the following key features:
-  - **Request Routing**: Directs client requests to the appropriate microservice.
-  - **Rate Limiting & Throttling**: Token Bucket algorithm prevents DDoS attacks by controlling requests rates.
-  - **IP Whitelisting**: Perform IP whitelisting for admin user routes.
-
-2. **Authentication Microservice**
-
-3. **Inventory Microservice**
-
-4. **Order Microservice**
-
-## Project Setup
-
-- Ensure these ports are available on your localhost machine as stated in [this section](#technologies). You can also modify the host port if needed.
+## Localhost
 
 ### Docker
 

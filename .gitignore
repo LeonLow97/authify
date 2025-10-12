@@ -42,3 +42,8 @@ terraform-provider-*
 
 # Ignore crash log files
 crash.log
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
