@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"strings"
+	"sync"
 
 	"github.com/spf13/viper"
 )
@@ -80,11 +82,9 @@ var modes = map[string]struct{}{
 	ModeProduction:  {},
 }
 
-// LoadConfig reads configuration based on the current mode.
+// LoadConfig loads config from disk/env — PURE, NO SIDE EFFECTS, fully testable.
 func LoadConfig() (*Config, error) {
 	vpr := viper.New()
-
-	// allow env vars like SERVER.PORT or SERVER_PORT to override
 	vpr.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	vpr.AutomaticEnv()
 
@@ -98,9 +98,7 @@ func LoadConfig() (*Config, error) {
 	}
 
 	vpr.SetConfigName(mode)
-
 	if mode == ModeDevelopment {
-		// development mode stores config in ./config
 		vpr.AddConfigPath("./config")
 	} else {
 		vpr.AddConfigPath("/app/config")
@@ -108,19 +106,39 @@ func LoadConfig() (*Config, error) {
 
 	if err := vpr.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			return nil, fmt.Errorf("no config file found for mode %q: %v", mode, err)
+			return nil, fmt.Errorf("no config file found for mode %q", mode)
 		}
-		return nil, fmt.Errorf("failed reading config file: %w", err)
+		return nil, fmt.Errorf("failed reading config: %w", err)
 	}
 
-	var cfg Config
-	cfg.setDefaultValues(vpr)
-	if err := vpr.Unmarshal(&cfg); err != nil {
-		return nil, fmt.Errorf("failed unmarshaling config file: %w", err)
+	var c Config
+	c.setDefaultValues(vpr)
+	if err := vpr.Unmarshal(&c); err != nil {
+		return nil, fmt.Errorf("failed unmarshaling config: %w", err)
 	}
+	c.Mode = mode
+	return &c, nil
+}
 
-	cfg.Mode = mode
-	return &cfg, nil
+// --- Cached, singleton version for production ---
+
+var (
+	once sync.Once
+	cfg  *Config
+)
+
+// GetConfig returns the global config instance (loaded once).
+// Safe for concurrent use. Panics on load error (fail-fast).
+func GetConfig() *Config {
+	once.Do(func() {
+		var err error
+		cfg, err = LoadConfig()
+		if err != nil {
+			log.Fatalf("Failed to load config: %v", err)
+		}
+		log.Printf("Successfully loaded config in API Gateway | Mode: %s\n", cfg.Mode)
+	})
+	return cfg
 }
 
 func (c *Config) setDefaultValues(vpr *viper.Viper) {
