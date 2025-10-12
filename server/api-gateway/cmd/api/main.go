@@ -1,18 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/LeonLow97/internal/adapters/inbound/web"
 	grpcclient "github.com/LeonLow97/internal/adapters/outbound/grpc"
 	"github.com/LeonLow97/internal/config"
-	"github.com/LeonLow97/internal/core/services/auth"
-	"github.com/LeonLow97/internal/core/services/user"
 	"github.com/LeonLow97/internal/pkg/cache"
 )
 
 type application struct {
-	Config           *config.Config
+	cfg              *config.Config
 	GRPCClient       grpcclient.GRPCClient
 	AppCache         cache.Cache
 	AuthHandler      *web.AuthHandler
@@ -23,14 +22,10 @@ type application struct {
 
 func main() {
 	// Load Config
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		log.Fatalln("failed to load config with error", err)
-		return
-	}
+	cfg := config.GetConfig()
 
 	// Load application cache
-	appCache := cache.NewRedisClient(*cfg)
+	// appCache := cache.NewRedisClient(*cfg)
 
 	// // create a consul client
 	// hashicorpConsul := consul.NewConsul(*cfg)
@@ -47,20 +42,20 @@ func main() {
 	// 	log.Fatalln("failed to refresh services", err)
 	// }
 
-	grpcClient := grpcclient.NewGRPCClient(*cfg, nil)
-	defer grpcClient.AuthenticationClient().Close()
+	// grpcClient := grpcclient.NewGRPCClient(*cfg, nil)
+	// defer grpcClient.AuthenticationClient().Close()
 	// defer grpcClient.InventoryClient().Close()
 	// defer grpcClient.OrderClient().Close()
 
 	// instantiating auth microservice
-	authRepo := grpcclient.NewAuthRepo(grpcClient.AuthenticationClient())
-	authService := auth.NewAuthService(authRepo)
-	authHandler := web.NewAuthHandler(*cfg, authService)
+	// authRepo := grpcclient.NewAuthRepo(grpcClient.AuthenticationClient())
+	// authService := auth.NewAuthService(authRepo)
+	// authHandler := web.NewAuthHandler(*cfg, authService)
 
-	// instantiating user microservice
-	userRepo := grpcclient.NewUserRepo(grpcClient.AuthenticationClient())
-	userService := user.NewUserService(userRepo)
-	userHandler := web.NewUserHandler(userService)
+	// // instantiating user microservice
+	// userRepo := grpcclient.NewUserRepo(grpcClient.AuthenticationClient())
+	// userService := user.NewUserService(userRepo)
+	// userHandler := web.NewUserHandler(userService)
 
 	// // instantiating inventory microservice
 	// inventoryRepo := grpcclient.NewInventoryRepo(grpcClient.InventoryClient())
@@ -72,25 +67,24 @@ func main() {
 	// orderService := order.NewOrderService(orderRepo)
 	// orderHandler := web.NewOrderHandler(orderService)
 
-	// setup application config
 	app := application{
-		Config:      cfg,
-		AppCache:    appCache,
-		GRPCClient:  grpcClient,
-		AuthHandler: authHandler,
-		UserHandler: userHandler,
+		cfg: cfg,
+		// AppCache:    appCache,
+		// GRPCClient:  grpcClient,
+		// AuthHandler: authHandler,
+		// UserHandler: userHandler,
 		// InventoryHandler: inventoryHandler,
 		// OrderHandler:     orderHandler,
 	}
-
-	// getting router with gin engine
 	router := app.routes()
 
-	// Using gin to start api gateway server, exit status 1 if fail to start server
-	log.Println("Starting API Gateway for Inventory Management System!")
-	// apiGatewayPort := fmt.Sprintf(":%d", cfg.Server.Port)
-	apiGatewayPort := "0.0.0.0:8080"
-	if err := router.Run(apiGatewayPort); err != nil {
-		log.Fatal("failed to run server", err)
+	serverAddr := fmt.Sprintf("%s:%d", cfg.Server.BaseUrl, cfg.Server.Port)
+	log.Printf("Starting API Gateway | Server Address: '%s' \n", serverAddr)
+	if err := router.Run(serverAddr); err != nil {
+		log.Fatalf("failed to start api gateway server with error: %v\n", err)
 	}
+
+	// Deprecated Code
+	// apiGatewayPort := fmt.Sprintf(":%d", cfg.Server.Port)
+	// apiGatewayPort := "0.0.0.0:8080"
 }

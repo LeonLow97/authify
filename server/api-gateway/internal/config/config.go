@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 
 	"github.com/spf13/viper"
 )
@@ -22,8 +23,8 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	URL  string `mapstructure:"url"`
-	Port int    `mapstructure:"port"`
+	BaseUrl string `mapstructure:"base_url"`
+	Port    int    `mapstructure:"port"`
 }
 
 type AuthJWTTokenConfig struct {
@@ -70,52 +71,77 @@ type RateLimitingConfig struct {
 }
 
 const (
-	ModeDocker     = "docker"
-	ModeKubernetes = "kubernetes" // local kubernetes
+	ModeDevelopment = "development"
+	ModeDocker      = "docker"
+	ModeProduction  = "production"
 )
 
-// LoadConfig reads configuration based on the current mode.
-// It loads environment variables, reads the config file, and Unmarshal it into a Config struct
+var modes = map[string]struct{}{
+	ModeDevelopment: {},
+	ModeDocker:      {},
+	ModeProduction:  {},
+}
+
+// LoadConfig loads config from disk/env — PURE, NO SIDE EFFECTS, fully testable.
 func LoadConfig() (*Config, error) {
-	// Create a new Viper instance to manage configuration settings
 	vpr := viper.New()
-
-	// Replace '.' with '_' in environment variable names to match common conventions
-	// E.g., "DATABASE.HOST" becomes "DATABASE_HOST"
 	vpr.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	// Automatically bind environment variables to Viper keys
-	// This allows configuration values to be overridden by environment variables
 	vpr.AutomaticEnv()
 
-	// Retrieve the "MODE" environment variable to determine the configuration mode
-	// If not set, default to Development mode
 	mode := vpr.GetString("MODE")
 	if mode == "" {
-		mode = ModeDocker
+		mode = ModeDevelopment
 	}
 
-	// Set the configuration file name based on the mode (e.g., "development.yaml")
-	vpr.SetConfigName(mode)
+	if _, ok := modes[mode]; !ok {
+		return nil, fmt.Errorf("unknown MODE %q", mode)
+	}
 
-	// Add the directory "/app/config" as a location to search for the configuration file
-	vpr.AddConfigPath("/app/config")
+	vpr.SetConfigName(mode)
+	if mode == ModeDevelopment {
+		vpr.AddConfigPath("./config")
+	} else {
+		vpr.AddConfigPath("/app/config")
+	}
 
 	if err := vpr.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			return nil, fmt.Errorf("config file not found with error: %v", err)
+			return nil, fmt.Errorf("no config file found for mode %q", mode)
 		}
-		log.Println("Failed to read config file using Viper with error:", err)
-		return nil, err
+		return nil, fmt.Errorf("failed reading config: %w", err)
 	}
 
-	// Unmarshal the configuration file into the Config struct
-	var config Config
-	if err := vpr.Unmarshal(&config); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config with error: %v", err)
+	var c Config
+	c.setDefaultValues(vpr)
+	if err := vpr.Unmarshal(&c); err != nil {
+		return nil, fmt.Errorf("failed unmarshaling config: %w", err)
 	}
+	c.Mode = mode
+	return &c, nil
+}
 
-	fmt.Println("Config -->", config)
+// --- Cached, singleton version for production ---
 
-	return &config, nil
+var (
+	once sync.Once
+	cfg  *Config
+)
+
+// GetConfig returns the global config instance (loaded once).
+// Safe for concurrent use. Panics on load error (fail-fast).
+func GetConfig() *Config {
+	once.Do(func() {
+		var err error
+		cfg, err = LoadConfig()
+		if err != nil {
+			log.Fatalf("Failed to load config: %v", err)
+		}
+		log.Printf("Successfully loaded config in API Gateway | Mode: %s\n", cfg.Mode)
+	})
+	return cfg
+}
+
+func (c *Config) setDefaultValues(vpr *viper.Viper) {
+	vpr.SetDefault("server.url", "localhost")
+	vpr.SetDefault("server.port", 80)
 }
