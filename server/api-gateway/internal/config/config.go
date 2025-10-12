@@ -120,8 +120,6 @@ func LoadConfig() (*Config, error) {
 	return &c, nil
 }
 
-// --- Cached, singleton version for production ---
-
 var (
 	once sync.Once
 	cfg  *Config

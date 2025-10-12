@@ -7,18 +7,8 @@ import (
 	"github.com/LeonLow97/internal/adapters/inbound/web"
 	grpcclient "github.com/LeonLow97/internal/adapters/outbound/grpc"
 	"github.com/LeonLow97/internal/config"
-	"github.com/LeonLow97/internal/pkg/cache"
+	"github.com/LeonLow97/internal/core/services/user"
 )
-
-type application struct {
-	cfg              *config.Config
-	GRPCClient       grpcclient.GRPCClient
-	AppCache         cache.Cache
-	AuthHandler      *web.AuthHandler
-	UserHandler      *web.UserHandler
-	InventoryHandler *web.InventoryHandler
-	OrderHandler     *web.OrderHandler
-}
 
 func main() {
 	// Load Config
@@ -42,39 +32,19 @@ func main() {
 	// 	log.Fatalln("failed to refresh services", err)
 	// }
 
-	// grpcClient := grpcclient.NewGRPCClient(*cfg, nil)
-	// defer grpcClient.AuthenticationClient().Close()
-	// defer grpcClient.InventoryClient().Close()
-	// defer grpcClient.OrderClient().Close()
+	grpcClient := grpcclient.NewGRPCClient(*cfg, nil)
+	defer grpcClient.AuthenticationClient().Close()
 
-	// instantiating auth microservice
-	// authRepo := grpcclient.NewAuthRepo(grpcClient.AuthenticationClient())
-	// authService := auth.NewAuthService(authRepo)
-	// authHandler := web.NewAuthHandler(*cfg, authService)
-
-	// // instantiating user microservice
-	// userRepo := grpcclient.NewUserRepo(grpcClient.AuthenticationClient())
-	// userService := user.NewUserService(userRepo)
-	// userHandler := web.NewUserHandler(userService)
-
-	// // instantiating inventory microservice
-	// inventoryRepo := grpcclient.NewInventoryRepo(grpcClient.InventoryClient())
-	// inventoryService := inventory.NewInventoryService(inventoryRepo)
-	// inventoryHandler := web.NewInventoryHandler(inventoryService)
-
-	// // instantiating order microservice
-	// orderRepo := grpcclient.NewOrderRepo(grpcClient.OrderClient())
-	// orderService := order.NewOrderService(orderRepo)
-	// orderHandler := web.NewOrderHandler(orderService)
+	// instantiating user microservice
+	userRepo := grpcclient.NewUserRepo(grpcClient.AuthenticationClient())
+	userService := user.NewUserService(userRepo)
+	userHandler := web.NewUserHandler(*cfg, userService)
 
 	app := application{
 		cfg: cfg,
 		// AppCache:    appCache,
 		// GRPCClient:  grpcClient,
-		// AuthHandler: authHandler,
-		// UserHandler: userHandler,
-		// InventoryHandler: inventoryHandler,
-		// OrderHandler:     orderHandler,
+		UserHandler: userHandler,
 	}
 	router := app.routes()
 
