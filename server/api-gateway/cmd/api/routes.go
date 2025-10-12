@@ -9,7 +9,7 @@ import (
 
 func (app *application) routes() *gin.Engine {
 	// Application Middlewares to process incoming requests
-	middleware := middleware.NewMiddleware(*app.Config, app.AppCache)
+	middleware := middleware.NewMiddleware(*app.cfg, app.AppCache)
 
 	router := gin.Default()
 

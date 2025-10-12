@@ -1,0 +1,5 @@
+mode: development
+
+server:
+  url: 'localhost'
+  port: 8080
