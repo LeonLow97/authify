@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/LeonLow97/internal/cache"
 	"github.com/LeonLow97/internal/core/domain"
 	"github.com/LeonLow97/internal/pkg/utils"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -36,7 +38,19 @@ func (s service) Login(ctx context.Context, loginInput domain.LoginInput) (*doma
 		return nil, "", ErrInactiveUser
 	}
 
-	token, err := s.generateJWTToken(user.ID)
+	// Create user session and store in cache
+	sessionID := uuid.NewString()
+	expiry := time.Duration(s.cfg.JWTConfig.Expiry) * time.Minute
+
+	// Add small buffer to Redis TTL to handle clock drift and network latency
+	const driftBuffer = time.Minute
+	ttlSeconds := int64((expiry + driftBuffer).Seconds())
+
+	if err := s.storeUserSessionInCache(ctx, sessionID, user.ID, ttlSeconds); err != nil {
+		return nil, "", err
+	}
+
+	token, err := s.generateJWTToken(user.ID, sessionID, expiry)
 	if err != nil {
 		return nil, "", err
 	}
@@ -72,17 +86,31 @@ func (s service) SignUp(ctx context.Context, signupInput domain.SignUpInput) err
 	return nil
 }
 
-func (s service) generateJWTToken(userID int64) (string, error) {
-	// Generate JWT Token with claims
-	tokenExpiryTime := time.Now().Add(time.Duration(s.cfg.JWTConfig.Expiry) * time.Minute)
-	generateToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Issuer:    fmt.Sprintf("%d", userID),
-		ExpiresAt: jwt.NewNumericDate(tokenExpiryTime),
-	})
-
+func (s service) generateJWTToken(userID int64, sessionID string, expiry time.Duration) (string, error) {
+	expirationTime := time.Now().Add(expiry)
+	claims := CustomClaims{
+		SessionID: sessionID,
+		UserID:    userID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "user-service",
+			Subject:   fmt.Sprintf("%d", userID),
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+	generateToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, err := generateToken.SignedString([]byte(s.cfg.JWTConfig.SecretKey))
 	if err != nil {
 		return "", fmt.Errorf("failed to generate JWT token for user id '%d' with error: %v", userID, err)
 	}
 	return signedToken, nil
+}
+
+func (s service) storeUserSessionInCache(ctx context.Context, sessionID string, userID int64, ttlSeconds int64) error {
+	key := fmt.Sprintf(cache.UserSession, sessionID)
+	_, err := s.appCache.SetNX(ctx, key, userID, ttlSeconds)
+	if err != nil {
+		return fmt.Errorf("failed to set user session in cache with error: %w", err)
+	}
+	return nil
 }

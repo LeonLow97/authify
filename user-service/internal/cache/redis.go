@@ -10,17 +10,17 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-type Cache struct {
-	RedisClient *redis.Client
-	cfg         config.Config
+type RedisCache struct {
+	client *redis.Client
+	cfg    config.Config
 }
 
 var (
-	instance *Cache
+	instance *RedisCache
 	once     sync.Once // singleton pattern
 )
 
-func GetCache(cfg config.Config) (*Cache, error) {
+func NewRedisCache(cfg config.Config) (*RedisCache, error) {
 	var initErr error
 	once.Do(func() {
 		opts := &redis.Options{
@@ -33,9 +33,9 @@ func GetCache(cfg config.Config) (*Cache, error) {
 		}
 
 		// DO NOT reassign `instance` because we are using a global instance variable
-		instance = &Cache{
-			RedisClient: redis.NewClient(opts),
-			cfg:         cfg,
+		instance = &RedisCache{
+			client: redis.NewClient(opts),
+			cfg:    cfg,
 		}
 
 		// Ping Redis during initialization
@@ -50,7 +50,28 @@ func GetCache(cfg config.Config) (*Cache, error) {
 	return instance, initErr
 }
 
-// Ping checks if Redis is alive
-func (c *Cache) Ping(ctx context.Context) error {
-	return c.RedisClient.Ping(ctx).Err()
+func (r *RedisCache) Ping(ctx context.Context) error {
+	return r.client.Ping(ctx).Err()
+}
+
+func (r *RedisCache) Set(ctx context.Context, key string, value any, ttlSeconds int64) error {
+	return r.client.Set(ctx, key, value, time.Duration(ttlSeconds)*time.Second).Err()
+}
+
+func (r *RedisCache) SetNX(ctx context.Context, key string, value any, ttlSeconds int64) (bool, error) {
+	ok, err := r.client.SetNX(ctx, key, value, time.Duration(ttlSeconds)*time.Second).Result()
+	return ok, err
+}
+
+func (r *RedisCache) Get(ctx context.Context, key string) (string, error) {
+	return r.client.Get(ctx, key).Result()
+}
+
+func (r *RedisCache) Delete(ctx context.Context, key string) error {
+	return r.client.Del(ctx, key).Err()
+}
+
+func (r *RedisCache) Exists(ctx context.Context, key string) (bool, error) {
+	count, err := r.client.Exists(ctx, key).Result()
+	return count > 0, err
 }

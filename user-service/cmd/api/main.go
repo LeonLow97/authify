@@ -23,10 +23,10 @@ func main() {
 		log.Fatalf("failed to load config with error: %v\n", err)
 	}
 
-	// Load user service cache
-	cacheClient, err := cache.GetCache(*cfg)
+	// Load Redis cache client
+	appCache, err := cache.NewRedisCache(*cfg)
 	if err != nil {
-		log.Fatalf("failed to load cache with error: %v\n", err)
+		log.Fatalf("failed to load redis cache with error: %v\n", err)
 	}
 
 	// Get database connection
@@ -37,7 +37,7 @@ func main() {
 
 	// Initialise outbound clients and services
 	outboundClient := outbound.NewOutbound(dbClient.DB)
-	service := services.NewService(*cfg, outboundClient, cacheClient)
+	service := services.NewService(*cfg, outboundClient, appCache)
 
 	app := grpcserver.Application{
 		Config:  *cfg,

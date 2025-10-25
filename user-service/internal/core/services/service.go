@@ -20,10 +20,10 @@ type Service interface {
 type service struct {
 	repo     ports.Outbound
 	cfg      config.Config
-	appCache *cache.Cache
+	appCache cache.Cache
 }
 
-func NewService(cfg config.Config, r ports.Outbound, appCache *cache.Cache) Service {
+func NewService(cfg config.Config, r ports.Outbound, appCache cache.Cache) Service {
 	return &service{
 		repo:     r,
 		cfg:      cfg,
