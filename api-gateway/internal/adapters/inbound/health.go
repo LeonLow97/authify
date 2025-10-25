@@ -10,10 +10,10 @@ import (
 )
 
 type HealthHandler struct {
-	cacheClient *cache.Cache
+	cacheClient cache.Cache
 }
 
-func NewHealthHandler(cacheClient *cache.Cache) *HealthHandler {
+func NewHealthHandler(cacheClient cache.Cache) *HealthHandler {
 	return &HealthHandler{
 		cacheClient: cacheClient,
 	}

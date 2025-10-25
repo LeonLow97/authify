@@ -20,12 +20,12 @@ func NewHandler() Handler {
 	}
 }
 
-func (h *Handler) RespondGrpcError(c *gin.Context, err error) {
+func (h *Handler) RespondGrpcError(c *gin.Context, err error) codes.Code {
 	st, ok := status.FromError(err)
 	if !ok {
 		log.Println("[gRPC Error] Non-gRPC error:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-		return
+		return codes.Unknown
 	}
 
 	message := st.Message()
@@ -37,7 +37,7 @@ func (h *Handler) RespondGrpcError(c *gin.Context, err error) {
 	case codes.InvalidArgument:
 		c.JSON(http.StatusBadRequest, gin.H{"error": message})
 	case codes.Unauthenticated:
-		c.JSON(http.StatusUnauthorized, gin.H{"error": message})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 	case codes.PermissionDenied:
 		c.JSON(http.StatusForbidden, gin.H{"error": message})
 	case codes.NotFound:
@@ -69,4 +69,6 @@ func (h *Handler) RespondGrpcError(c *gin.Context, err error) {
 		log.Printf("[gRPC Unhandled Error] Code=%s Message=%s Err=%v\n", code, message, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 	}
+
+	return code
 }

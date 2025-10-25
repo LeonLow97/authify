@@ -15,7 +15,8 @@ import (
 	"github.com/LeonLow97/internal/cache"
 	"github.com/LeonLow97/internal/client"
 	"github.com/LeonLow97/internal/config"
-	"github.com/LeonLow97/internal/core/services/user"
+	user "github.com/LeonLow97/internal/core/services"
+	"github.com/LeonLow97/internal/pkg/ratelimit"
 )
 
 func main() {
@@ -25,10 +26,10 @@ func main() {
 		log.Fatalf("failed to load config with error: %v\n", err)
 	}
 
-	// Load api gateway cache
-	cacheClient, err := cache.GetCache(*cfg)
+	// Load Redis cache client
+	appCache, err := cache.NewRedisCache(*cfg)
 	if err != nil {
-		log.Fatalf("failed to load cache with error: %v\n", err)
+		log.Fatalf("failed to load redis cache with error: %v\n", err)
 	}
 
 	// Load gRPC clients
@@ -38,11 +39,14 @@ func main() {
 	}
 	defer userGrpcClient.Close()
 
-	healthHandler := inbound.NewHealthHandler(cacheClient)
+	// Load Rate Limiters
+	rateLimiter := ratelimit.NewRateLimiter(*cfg, appCache)
+
+	healthHandler := inbound.NewHealthHandler(appCache)
 
 	userOutbound := outbound.NewUserOutbound(userGrpcClient.UserService())
 	userService := user.NewUserService(userOutbound)
-	userHandler := inbound.NewUserHandler(*cfg, userService)
+	userHandler := inbound.NewUserHandler(*cfg, rateLimiter, userService)
 
 	app := application{
 		cfg:           cfg,

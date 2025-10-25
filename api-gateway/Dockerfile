@@ -17,7 +17,7 @@ FROM alpine:3.22.2
 WORKDIR /app
 
 COPY --from=builder /app/apiGateway .
-COPY --from=builder /app/config /app/config
+COPY --from=builder /app/config ./config
 
 EXPOSE 80
 

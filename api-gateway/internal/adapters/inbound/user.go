@@ -9,10 +9,11 @@ import (
 	"github.com/LeonLow97/internal/adapters/inbound/dto"
 	"github.com/LeonLow97/internal/config"
 	"github.com/LeonLow97/internal/core/domain"
-	user "github.com/LeonLow97/internal/core/services/user"
+	user "github.com/LeonLow97/internal/core/services"
 	"github.com/LeonLow97/internal/pkg/apierror"
 	"github.com/LeonLow97/internal/pkg/contextstore"
 	"github.com/LeonLow97/internal/pkg/handler"
+	"github.com/LeonLow97/internal/pkg/ratelimit"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -22,39 +23,64 @@ import (
 type UserHandler struct {
 	handler.Handler
 	cfg         config.Config
+	rateLimiter ratelimit.RateLimiter
 	UserService user.User
 }
 
-func NewUserHandler(cfg config.Config, userService user.User) *UserHandler {
+func NewUserHandler(cfg config.Config, rateLimiter ratelimit.RateLimiter, userService user.User) *UserHandler {
 	return &UserHandler{
 		Handler:     handler.NewHandler(),
 		cfg:         cfg,
+		rateLimiter: rateLimiter,
 		UserService: userService,
 	}
 }
 
 func (h *UserHandler) Login(c *gin.Context) {
+	// Deserialize request body and validate request fields
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		apierror.ErrBadRequest.APIError(c, err)
 		return
 	}
-
-	// Request Validation
 	if err := h.ValidateStruct(req); err != nil {
-		apierror.ErrUnauthorized.APIError(c, err)
+		apierror.ErrBadRequest.APIError(c, err)
 		return
 	}
 
-	userData := domain.User{
-		Email:    req.Email,
-		Password: req.Password,
+	clientIP := c.ClientIP()
+
+	// Rate limiting login endpoint
+	if err := h.rateLimiter.LoginRateLimiter(c, req.Email, clientIP); err != nil {
+		switch {
+		case errors.Is(err, ratelimit.ErrLoginBurstRateLimitExceeded):
+			apierror.ErrTooManyRequests.APIError(c, err)
+			return
+		case errors.Is(err, ratelimit.ErrLoginFailRateLimitExceeded):
+			apierror.ErrTooManyRequests.APIError(c, err)
+			return
+		default:
+			// don't block login on unexpected rate limiter errors
+			log.Printf("unexpected rate limiter error: %v\n", err)
+		}
 	}
 
-	resp, token, err := h.UserService.Login(c, userData)
+	resp, token, err := h.UserService.Login(c, dto.FromLoginRequest(&req))
 	if err != nil {
-		h.Handler.RespondGrpcError(c, err)
+		code := h.Handler.RespondGrpcError(c, err)
+
+		// Increment fail counter only if unauthenticated
+		if code == codes.Unauthenticated {
+			if err := h.rateLimiter.IncrementLoginFailRateLimiter(c, req.Email, clientIP); err != nil {
+				log.Printf("warning: failed to increment login fail counter: %v", err)
+			}
+		}
+
 		return
+	}
+
+	if err := h.rateLimiter.ResetLoginFailRateLimiter(c, req.Email, c.ClientIP()); err != nil {
+		log.Printf("warning: failed to reset login fail counter: %v", err)
 	}
 
 	http.SetCookie(c.Writer, &http.Cookie{
@@ -66,14 +92,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		Secure:   h.cfg.AuthJWTToken.Secure,
 		HttpOnly: h.cfg.AuthJWTToken.HTTPOnly,
 	})
-
-	c.JSON(http.StatusOK, dto.LoginResponse{
-		FirstName: resp.FirstName,
-		LastName:  resp.LastName,
-		Email:     resp.Email,
-		Active:    resp.Active,
-		Admin:     resp.Admin,
-	})
+	c.JSON(http.StatusOK, dto.ToLoginResponse(resp))
 }
 
 func (h *UserHandler) SignUp() gin.HandlerFunc {
