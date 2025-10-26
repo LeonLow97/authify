@@ -39,6 +39,15 @@ type SignUpRequest struct {
 	Email     string `json:"email" validate:"required,email,min=10,max=100"`
 }
 
+func FromSignUpRequest(req *SignUpRequest) domain.User {
+	return domain.User{
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Password:  req.Password,
+		Email:     req.Email,
+	}
+}
+
 type User struct {
 	ID        int64  `json:"id"`
 	FirstName string `json:"first_name,omitempty"`
@@ -54,9 +63,36 @@ type GetUsersResponse struct {
 	NextCursor string `json:"next_cursor"`
 }
 
+func ToGetUsersResponse(domainUsers []domain.User, nextCursor string) GetUsersResponse {
+	users := make([]User, len(domainUsers))
+	for i, u := range domainUsers {
+		users[i] = User{
+			ID:        u.ID,
+			FirstName: u.FirstName,
+			LastName:  u.LastName,
+			Email:     u.Email,
+			Active:    u.Active,
+			Admin:     u.Admin,
+		}
+	}
+	return GetUsersResponse{
+		Users:      users,
+		NextCursor: nextCursor,
+	}
+}
+
 type UpdateUserRequest struct {
 	FirstName string `json:"first_name" validate:"omitempty,min=1,max=50"`
 	LastName  string `json:"last_name" validate:"omitempty,min=1,max=50"`
 	Password  string `json:"password" validate:"omitempty,password_format,min=8,max=20"`
 	Email     string `json:"email" validate:"omitempty,email,min=10,max=100"`
+}
+
+func FromUpdateUserRequest(req *UpdateUserRequest) domain.User {
+	return domain.User{
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Password:  req.Password,
+		Email:     req.Email,
+	}
 }

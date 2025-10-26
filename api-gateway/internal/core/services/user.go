@@ -49,7 +49,6 @@ func (s *service) GetUsers(ctx context.Context, limit int64, cursor string) ([]d
 		log.Printf("failed to get users with error: %v\n", err)
 		return nil, "", err
 	}
-
 	return users, nextCursor, nil
 }
 

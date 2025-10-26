@@ -1,9 +1,7 @@
 package client
 
 import (
-	"context"
 	"fmt"
-	"time"
 
 	"github.com/LeonLow97/internal/config"
 	pb "github.com/LeonLow97/proto"
@@ -23,19 +21,15 @@ type client struct {
 
 // NewGrpcClient connects with the Grpc servers
 func NewGrpcClient(cfg config.Config) (GrpcClient, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultCallOptions(
 			grpc.MaxCallRecvMsgSize(10 << 20), // 10MB
 		),
-		grpc.WithBlock(), // make DialContext wait for connection or timeout
 	}
 
 	serverAddr := fmt.Sprintf("%s:%d", cfg.UserService.BaseUrl, cfg.UserService.Port)
-	conn, err := grpc.DialContext(ctx, serverAddr, opts...)
+	conn, err := grpc.NewClient(serverAddr, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("dial auth service %q: %w", serverAddr, err)
 	}
