@@ -35,14 +35,20 @@ func toSignUpInput(req *pb.SignUpRequest) domain.SignUpInput {
 	}
 }
 
-func SanitizeGetUsersRequest(req *pb.GetUsersRequest) {
-	// Minimum limit
-	if req.Limit < 10 {
-		req.Limit = 10
+func toGetUsersResponse(users []domain.User, nextCursor string) *pb.GetUsersResponse {
+	grpcUsers := make([]*pb.User, 0, len(users))
+	for _, user := range users {
+		grpcUsers = append(grpcUsers, &pb.User{
+			ID:        user.ID,
+			Email:     user.Email,
+			FirstName: *user.FirstName,
+			LastName:  *user.LastName,
+			Active:    user.Active,
+		})
 	}
-	// Maximum Limit
-	if req.Limit > 50 {
-		req.Limit = 50
+	return &pb.GetUsersResponse{
+		Users:      grpcUsers,
+		NextCursor: nextCursor,
 	}
 }
 
@@ -52,4 +58,14 @@ func ToUpdateUserInput(req *pb.UpdateUserRequest) domain.UpdateUserInput {
 		LastName:  utils.ToPointer(req.LastName),
 		Password:  utils.ToPointer(req.Password),
 	}
+}
+
+func SanitizePaginationCursor(limit int64) int64 {
+	if limit <= 0 {
+		return 10
+	}
+	if limit > 50 {
+		return 50
+	}
+	return limit
 }

@@ -12,7 +12,7 @@ type Outbound interface {
 	EmailExists(ctx context.Context, email string) (bool, error)
 
 	InsertUser(ctx context.Context, user *domain.User) error
-	UpdateUserByID(ctx context.Context, user *domain.User) error
+	UpdateUserByEmail(ctx context.Context, user *domain.User) error
 
 	IsAdminUser(ctx context.Context, adminUserID int64) (bool, error)
 }

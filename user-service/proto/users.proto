@@ -7,7 +7,7 @@ option go_package = "./proto";
 
 service UserService {
     rpc Login(LoginRequest) returns (LoginResponse);
-    rpc SignUp(SignUpRequest) returns (SignUpResponse);
+    rpc SignUp(SignUpRequest) returns (google.protobuf.Empty);
 
     rpc UpdateUser(UpdateUserRequest) returns (google.protobuf.Empty);
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
@@ -32,10 +32,6 @@ message SignUpRequest {
     string last_name    = 2;
     string password     = 3;
     string email        = 4;
-}
-
-message SignUpResponse {
-    string email = 1;
 }
 
 message UpdateUserRequest {

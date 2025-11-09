@@ -9,6 +9,7 @@ import (
 
 	"github.com/LeonLow97/internal/core/domain"
 	"github.com/LeonLow97/internal/core/services"
+	"github.com/LeonLow97/internal/pkg/utils"
 )
 
 func (r *Outbound) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
@@ -19,7 +20,6 @@ func (r *Outbound) GetUserByEmail(ctx context.Context, email string) (*domain.Us
 		FROM users
 		WHERE email = $1
     `
-
 	var user domain.User
 	if err := r.db.GetContext(ctx, &user, query, email); err != nil {
 		switch {
@@ -38,7 +38,6 @@ func (r *Outbound) EmailExists(ctx context.Context, email string) (bool, error) 
 			SELECT 1 FROM users WHERE email = $1
 		)
 	`
-
 	var exists bool
 	if err := r.db.QueryRowContext(ctx, query, email).Scan(&exists); err != nil {
 		return false, err
@@ -51,28 +50,31 @@ func (r *Outbound) InsertUser(ctx context.Context, user *domain.User) error {
 		INSERT INTO users (email, hashed_password, first_name, last_name)
 		VALUES (?, ?, ?, ?)
     `
-
 	args := []any{user.Email, user.HashedPassword, user.FirstName, user.LastName}
 	_, err := r.db.ExecContext(ctx, r.db.Rebind(query), args...)
 	return err
 }
 
-func (r *Outbound) UpdateUserByID(ctx context.Context, user *domain.User) error {
-	var setClauses []string
-	var args []any
+func (r *Outbound) UpdateUserByEmail(ctx context.Context, user *domain.User) error {
+	if user.Email == "" {
+		return errors.New("email is required for update")
+	}
+
+	setClauses := make([]string, 0)
+	args := make([]any, 0)
 
 	// Dynamically add fields to update only if they are provided
-	if user.FirstName != nil && *user.FirstName != "" {
+	if user.FirstName != nil && utils.FromPointer(user.FirstName) != "" {
 		setClauses = append(setClauses, "first_name = ?")
-		args = append(args, *user.FirstName)
+		args = append(args, utils.FromPointer(user.FirstName))
 	}
-	if user.LastName != nil && *user.LastName != "" {
+	if user.LastName != nil && utils.FromPointer(user.LastName) != "" {
 		setClauses = append(setClauses, "last_name = ?")
-		args = append(args, *user.LastName)
+		args = append(args, utils.FromPointer(user.LastName))
 	}
-	if user.HashedPassword != nil && *user.HashedPassword != "" {
+	if user.HashedPassword != nil && utils.FromPointer(user.HashedPassword) != "" {
 		setClauses = append(setClauses, "hashed_password = ?")
-		args = append(args, *user.HashedPassword)
+		args = append(args, utils.FromPointer(user.HashedPassword))
 	}
 
 	// Return early if there are no updates
@@ -80,14 +82,12 @@ func (r *Outbound) UpdateUserByID(ctx context.Context, user *domain.User) error 
 		return nil
 	}
 
-	query := fmt.Sprintf(`
-		UPDATE users
-		SET
-			%s, updated_at = NOW()
-		WHERE id = ?
-	`, strings.Join(setClauses, ", "))
+	query := fmt.Sprintf(
+		"UPDATE users SET %s, updated_at = NOW() WHERE email = ?",
+		strings.Join(setClauses, ", "),
+	)
 
-	args = append(args, user.ID)
+	args = append(args, user.Email)
 	_, err := r.db.ExecContext(ctx, r.db.Rebind(query), args...)
 	return err
 }

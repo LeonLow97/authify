@@ -61,7 +61,7 @@ func (s service) Login(ctx context.Context, loginInput domain.LoginInput) (*doma
 func (s service) SignUp(ctx context.Context, signupInput domain.SignUpInput) error {
 	emailExists, err := s.repo.EmailExists(ctx, signupInput.Email)
 	if err != nil {
-		return fmt.Errorf("failed to check if email '%s' exists with error: %v", signupInput.Email, err)
+		return fmt.Errorf("failed to check if email exists with error: %v", err)
 	}
 	if emailExists {
 		return ErrEmailAlreadyExists
@@ -70,7 +70,7 @@ func (s service) SignUp(ctx context.Context, signupInput domain.SignUpInput) err
 	// Generate hashed password from plain text password via bcrypt
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(signupInput.Password), 10)
 	if err != nil {
-		return fmt.Errorf("failed to hash password for email '%s' with error: %v\n", signupInput.Email, err)
+		return fmt.Errorf("failed to hash password with error: %v", err)
 	}
 
 	user := &domain.User{
@@ -80,7 +80,7 @@ func (s service) SignUp(ctx context.Context, signupInput domain.SignUpInput) err
 		LastName:       utils.ToPointer(signupInput.LastName),
 	}
 	if err := s.repo.InsertUser(ctx, user); err != nil {
-		return fmt.Errorf("failed to insert user during signup with error: %v\n", err)
+		return fmt.Errorf("failed to insert user during signup with error: %v", err)
 	}
 
 	return nil

@@ -23,6 +23,7 @@ func (app *application) registerRoutes() *gin.Engine {
 	// User Microservice
 	userGroup := router.Group("/api/v1")
 	userGroup.POST("/login", app.UserHandler.Login)
+	userGroup.POST("/signup", app.UserHandler.SignUp)
 
 	return router
 }

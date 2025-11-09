@@ -57,7 +57,7 @@ func (r *rateLimiter) loginBurstRateLimiter(ctx context.Context, email, ip strin
 		return fmt.Errorf("failed to apply login burst rate limiter: %w", err)
 	}
 
-	if count >= cfg.RateLimit.Requests {
+	if count > cfg.RateLimit.Requests {
 		return ErrLoginBurstRateLimitExceeded
 	}
 	return nil

@@ -1,6 +1,8 @@
 module github.com/LeonLow97
 
-go 1.25
+go 1.24.0
+
+toolchain go1.24.3
 
 require (
 	github.com/gin-gonic/gin v1.11.0

@@ -1,3 +1,7 @@
+proto:
+	@echo "Align gRPC proto files..."
+	./proto.sh
+
 build:
 	docker-compose -f docker-compose.dev.yml down
 	@echo "Building and starting docker images..."

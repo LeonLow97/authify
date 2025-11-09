@@ -48,7 +48,7 @@ func (s service) GetUsers(ctx context.Context, adminUserID int64, limit int64, c
 	return users, nextCursor, nil
 }
 
-func (s service) UpdateUser(ctx context.Context, userID int64, updateUserInput domain.UpdateUserInput) error {
+func (s service) UpdateUserByEmail(ctx context.Context, userID int64, updateUserInput domain.UpdateUserInput) error {
 	var hashedPassword *string
 	if updateUserInput.Password != nil && *updateUserInput.Password != "" {
 		hashed, err := bcrypt.GenerateFromPassword([]byte(*updateUserInput.Password), bcrypt.DefaultCost)
@@ -67,7 +67,7 @@ func (s service) UpdateUser(ctx context.Context, userID int64, updateUserInput d
 		LastName:       updateUserInput.LastName,
 	}
 
-	if err := s.repo.UpdateUserByID(ctx, updateUser); err != nil {
+	if err := s.repo.UpdateUserByEmail(ctx, updateUser); err != nil {
 		log.Printf("failed to update user by id '%d' with error: %v\n", userID, err)
 		return err
 	}

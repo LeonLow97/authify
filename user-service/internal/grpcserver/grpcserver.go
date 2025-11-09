@@ -63,7 +63,6 @@ func (app *Application) registerHealth(server *grpc.Server) {
 
 func (app *Application) registerReflection(server *grpc.Server) {
 	reflection.Register(server)
-	log.Println("[gRPC] Reflection enabled")
 }
 
 func (app *Application) registerUserService(server *grpc.Server) {
