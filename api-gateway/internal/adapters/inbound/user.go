@@ -10,12 +10,10 @@ import (
 	"github.com/LeonLow97/internal/config"
 	user "github.com/LeonLow97/internal/core/services"
 	"github.com/LeonLow97/internal/pkg/apierror"
-	"github.com/LeonLow97/internal/pkg/contextstore"
 	"github.com/LeonLow97/internal/pkg/handler"
 	"github.com/LeonLow97/internal/pkg/ratelimit"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 )
 
 type UserHandler struct {
@@ -73,7 +71,6 @@ func (h *UserHandler) Login(c *gin.Context) {
 				log.Printf("warning: failed to increment login fail counter: %v", err)
 			}
 		}
-
 		return
 	}
 
@@ -139,14 +136,7 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 	}
 	cursor := h.GetQueryParam(c, "cursor", "")
 
-	md, err := contextstore.GRPCMetadataFromContext(c)
-	if err != nil {
-		apierror.ErrInternalServerError.APIError(c, err)
-		return
-	}
-	grpcCtx := metadata.NewOutgoingContext(c, md)
-
-	domainResp, nextCursor, err := h.UserService.GetUsers(grpcCtx, int64(limit), cursor)
+	domainResp, nextCursor, err := h.UserService.GetUsers(c, int64(limit), cursor)
 	if err != nil {
 		_ = h.Handler.RespondGrpcError(c, err)
 		return
@@ -155,13 +145,6 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 }
 
 func (h *UserHandler) UpdateUser(c *gin.Context) {
-	md, err := contextstore.GRPCMetadataFromContext(c)
-	if err != nil {
-		apierror.ErrInternalServerError.APIError(c, err)
-		return
-	}
-	grpcCtx := metadata.NewOutgoingContext(c, md)
-
 	var req dto.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		apierror.ErrBadRequest.APIError(c, nil)
@@ -172,7 +155,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.UserService.UpdateUser(grpcCtx, dto.FromUpdateUserRequest(&req)); err != nil {
+	if err := h.UserService.UpdateUser(c, dto.FromUpdateUserRequest(&req)); err != nil {
 		_ = h.Handler.RespondGrpcError(c, err)
 		return
 	}

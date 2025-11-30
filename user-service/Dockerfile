@@ -9,7 +9,7 @@ RUN go mod download
 COPY . .
 
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
-RUN go build -o userService ./cmd/api
+RUN go build -o userService ./cmd
 
 # ---- Lightweight Image ----
 FROM alpine:3.22.2

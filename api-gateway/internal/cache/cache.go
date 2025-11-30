@@ -12,4 +12,6 @@ type Cache interface {
 	Incr(ctx context.Context, key string) (int64, error)
 	Expire(ctx context.Context, key string, ttlSeconds int64) (bool, error)
 	Ping(ctx context.Context) error
+
+	IsCacheMissError(err error) bool
 }

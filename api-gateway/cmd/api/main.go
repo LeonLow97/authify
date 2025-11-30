@@ -16,6 +16,7 @@ import (
 	"github.com/LeonLow97/internal/client"
 	"github.com/LeonLow97/internal/config"
 	user "github.com/LeonLow97/internal/core/services"
+	"github.com/LeonLow97/internal/metrics"
 	"github.com/LeonLow97/internal/pkg/ratelimit"
 )
 
@@ -38,6 +39,9 @@ func main() {
 		log.Fatalf("failed to create grpc client with error: %v\n", err)
 	}
 	defer userGrpcClient.Close()
+
+	// Register Metrics
+	metrics.InitMetrics()
 
 	// Load Rate Limiters
 	rateLimiter := ratelimit.NewRateLimiter(*cfg, appCache)

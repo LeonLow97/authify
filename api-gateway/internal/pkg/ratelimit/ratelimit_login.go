@@ -68,7 +68,7 @@ func (r *rateLimiter) checkLoginFailRateLimiter(ctx context.Context, email, ip s
 	key := fmt.Sprintf(cfg.Key, email, ip)
 
 	count, err := r.appCache.Get(ctx, key)
-	if err != nil {
+	if err != nil && !r.appCache.IsCacheMissError(err) {
 		return fmt.Errorf("failed to get login fail counter: %w", err)
 	}
 

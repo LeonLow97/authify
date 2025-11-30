@@ -4,7 +4,7 @@ import { check } from 'k6';
 const BASE_URL = 'http://localhost:8080';
 const payload = JSON.stringify({
   email: 'lowjiewei@email.com',
-  password: 'Password123!',
+  password: 'Password111!',
 });
 
 const params = {

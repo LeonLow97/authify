@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -82,4 +83,8 @@ func (r *RedisCache) Expire(ctx context.Context, key string, ttlSeconds int64) (
 func (r *RedisCache) Exists(ctx context.Context, key string) (bool, error) {
 	count, err := r.client.Exists(ctx, key).Result()
 	return count > 0, err
+}
+
+func (r *RedisCache) IsCacheMissError(err error) bool {
+	return errors.Is(err, redis.Nil)
 }
