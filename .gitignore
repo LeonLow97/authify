@@ -31,3 +31,6 @@ terraform-provider-*
 
 # Prometheus
 **/prometheus/data/
+
+# Redis
+*.rdb

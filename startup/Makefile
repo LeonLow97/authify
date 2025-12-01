@@ -1,21 +1,31 @@
-# ============================
-# Common Commands
-# ============================
-proto:
-	@echo "Align gRPC proto files..."
-	./proto.sh
+export PATH := $(PATH):$(shell go env GOPATH)/bin
+PROJECT_ROOT := $(abspath $(CURDIR)/..)
 
-# ============================
+# ====================================
+# Common Commands
+# ====================================
+.PHONY: proto
+# To generate protobuf code for both api-gateway and user-service
+proto:
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+
+	cd $(PROJECT_ROOT)/api-gateway && protoc --go_out=. --go-grpc_out=. proto/users.proto
+	cd $(PROJECT_ROOT)/user-service && protoc --go_out=. --go-grpc_out=. proto/users.proto
+
+# ====================================
 # Local Run
-# ============================
+# ====================================
 SERVICE ?= api-gateway
 .PHONY: run
+# Run `make run SERVICE=api-gateway` to run api-gateway
+# Run `make run SERVICE=user-service` to run user-service
 run:
 ifeq ($(SERVICE),api-gateway)
-	$(MAKE) -C ../api-gateway run
+	$(MAKE) -C $(PROJECT_ROOT)/api-gateway run
 endif
 ifeq ($(SERVICE),user-service)
-	$(MAKE) -C ../user-service run
+	$(MAKE) -C $(PROJECT_ROOT)/user-service run
 endif
 
 .PHONY: prom
@@ -30,14 +40,32 @@ grafana:
 	brew install grafana
 	brew services start grafana
 
-# build:
-# 	docker-compose -f docker-compose.dev.yml down
-# 	@echo "Building and starting docker images..."
-# 	docker-compose -f docker-compose.dev.yml up --build -d
-# 	@echo "Docker images built and started!"
+.PHONY: redis-server
+# Run `redis-cli` to interact with redis server
+redis-server:
+	brew install redis
+	brew services start redis
 
-# down:
-# 	docker-compose -f docker-compose.dev.yml down
+# ====================================
+# Docker
+# ====================================
+.PHONY: docker-build
+docker-build:
+	docker-compose -f ./docker/docker-compose.yaml down
+	docker-compose -f ./docker/docker-compose.yaml up --build -d
+
+.PHONY: docker-down
+docker-down:
+	docker-compose -f ./docker/docker-compose.yaml down
+
+.PHONY: docker-seed
+docker-seed:
+	docker exec -i user-postgres psql -U authify -d authify_users_db < $(PROJECT_ROOT)/user-service/schema/dummy.sql
+
+# ====================================
+# Local Kubernetes with Docker Desktop
+# ====================================
+
 
 # ec2_full_deploy:
 # 	sh ./aws-cli/common/remove-variables.sh

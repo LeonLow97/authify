@@ -1,16 +1,22 @@
-mode: "docker"
+mode: 'docker'
 
 server:
-  name: authentication-service
+  name: user-service
   port: 50051
 
 jwt:
-  secret_key: 493TKVrB0r5vY0hqU3OI28iDQJKhWDkR37OXtgSn1tife3z
+  secret_key: CHANGE_ME
   expiry: 15 # in minutes
 
 postgres:
-  user: authentication-postgres
-  password: password
-  host: authentication-postgres
+  user: CHANGE_ME
+  password: CHANGE_ME
+  host: CHANGE_ME
   port: 5432
-  db: imsdb
+  db: CHANGE_ME
+
+redis:
+  address: host.docker.internal
+  port: 6379
+  password:
+  database_index: 0

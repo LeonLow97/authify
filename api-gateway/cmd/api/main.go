@@ -60,6 +60,7 @@ func main() {
 	router := app.registerRoutes()
 
 	serverAddr := fmt.Sprintf("%s:%d", cfg.Server.BaseUrl, cfg.Server.Port)
+	fmt.Println(serverAddr)
 	srv := &http.Server{
 		Addr:    serverAddr,
 		Handler: router,

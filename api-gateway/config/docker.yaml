@@ -1,18 +1,18 @@
 mode: docker
 
 server:
-  base_url: host.docker.internal
-  port: 80
+  base_url: api-gateway
+  port: 8080
 
 user_service:
-  base_url: host.docker.internal
+  base_url: user-service
   port: 50051
 
 auth_jwt_token:
-  name: 'ims-auth-token'
+  name: authify_token
   secret: 493TKVrB0r5vY0hqU3OI28iDQJKhWDkR37OXtgSn1tife3z
   max_age: 3600
-  domain: 'localhost'
+  domain: host.docker.internal
   secure: false
   http_only: true
   path: '/'
@@ -20,5 +20,5 @@ auth_jwt_token:
 redis:
   port: 6379
   address: host.docker.internal
-  password: fb6200f3-e0c9-4228-b296-9e1d2e71439f
+  password:
   database_index: 0
