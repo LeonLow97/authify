@@ -2,20 +2,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway-deployment
-  namespace: inventory-management-system
+  namespace: authify
 spec:
   replicas: 4 # 4 pods to be created with ReplicaSet
   selector:
     matchLabels:
-      ims: api-gateway
+      authify: api-gateway
   template:
     metadata:
       labels:
-        ims: api-gateway # pod label
+        authify: api-gateway # pod label
     spec:
       containers:
         - name: api-gateway
-          image: localhost:5050/ims-api-gateway:latest
+          image: localhost:5050/authify-api-gateway:latest
           ports:
             - containerPort: 80
           env:

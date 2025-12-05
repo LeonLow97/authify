@@ -1,46 +1,46 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: authentication-postgres-statefulset
-  namespace: inventory-management-system
+  name: user-postgres-statefulset
+  namespace: authify
 spec:
   # DNS: <pod-name>.<service-name>.<namespace>.svc.cluster.local
-  serviceName: authentication-headless-service # authentication-postgres-0.authentication-headless-service.default.svc.cluster.local
+  serviceName: user-headless-service # user-postgres-0.user-headless-service.default.svc.cluster.local
   replicas: 1
   selector:
     matchLabels:
-      ims: authentication-postgres
+      authify: user-postgres
   template:
     metadata:
       labels:
-        ims: authentication-postgres
+        authify: user-postgres
     spec:
       containers:
         - name: postgres
           image: postgres:14.2
           env:
             - name: POSTGRES_DB
-              value: imsdb
+              value: authify_users_db
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: authentication-secret
+                  name: user-secret
                   key: POSTGRES_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: authentication-secret
+                  name: user-secret
                   key: POSTGRES_PASSWORD
             - name: POSTGRES_HOST
               valueFrom:
                 secretKeyRef:
-                  name: authentication-secret
+                  name: user-secret
                   key: POSTGRES_HOST
           ports:
             - containerPort: 5432
               name: postgres
           volumeMounts:
-            - name: postgres-authentication-data
+            - name: postgres-user-data
               mountPath: /var/lib/postgresql/data
               subPath: postgres # specific to postgres
           livenessProbe:
@@ -57,13 +57,13 @@ spec:
             failureThreshold: 3
   volumeClaimTemplates:
     - metadata:
-        name: postgres-authentication-data
+        name: postgres-user-data
       spec:
         # "ReadWriteOnce" means only 1 Pod can read and write to the volume at a time.
         accessModes:
-          - "ReadWriteOnce"
+          - 'ReadWriteOnce'
         resources:
           requests:
             storage: 500Mi # 500 MB
         # PVC will look for PVs with the same storageClassName to bind to
-        storageClassName: ims-storage-class
+        storageClassName: authify-storage-class

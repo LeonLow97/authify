@@ -19,6 +19,6 @@ auth_jwt_token:
 
 redis:
   port: 6379
-  address: 127.0.0.1
+  address: host.docker.internal
   password: ''
   database_index: 0

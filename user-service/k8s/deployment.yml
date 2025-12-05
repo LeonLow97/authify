@@ -1,63 +1,62 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: authentication-deployment
-  namespace: inventory-management-system
+  name: user-deployment
+  namespace: authify
 spec:
   replicas: 4
   selector:
     matchLabels:
-      ims: authentication
+      authify: user
   template:
     metadata:
       labels:
-        ims: authentication
+        authify: user
     spec:
       containers:
-        - name: authentication
-          image: localhost:5050/ims-authentication:latest
+        - name: user
+          image: localhost:5050/authify-user:latest
           ports:
             - containerPort: 50051
-          # TODO: add healthcheck probes in auth microservice
-          # readinessProbe:
-          #   grpc:
-          #     port: 50051
-          #   initialDelaySeconds: 10
-          #   periodSeconds: 20
-          #   failureThreshold: 5
-          # livenessProbe:
-          #   grpc:
-          #     port: 50051
-          #   initialDelaySeconds: 10
-          #   periodSeconds: 20
-          #   failureThreshold: 5
+          readinessProbe:
+            grpc:
+              port: 50051
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            failureThreshold: 5
+          livenessProbe:
+            grpc:
+              port: 50051
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            failureThreshold: 5
           env:
             - name: MODE
               value: kubernetes
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: authentication-secret
+                  name: user-secret
                   key: POSTGRES_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: authentication-secret
+                  name: user-secret
                   key: POSTGRES_PASSWORD
             - name: POSTGRES_HOST
               valueFrom:
                 secretKeyRef:
-                  name: authentication-secret
+                  name: user-secret
                   key: POSTGRES_HOST
             - name: POSTGRES_PORT
               valueFrom:
                 configMapKeyRef:
-                  name: authentication-configmap
+                  name: user-configmap
                   key: POSTGRES_PORT
             - name: POSTGRES_DB
               valueFrom:
                 configMapKeyRef:
-                  name: authentication-configmap
+                  name: user-configmap
                   key: POSTGRES_DB
   strategy:
     type: RollingUpdate

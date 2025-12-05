@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ims-ingress-resource
-  namespace: inventory-management-system
+  name: authify-ingress-resource
+  namespace: authify
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:

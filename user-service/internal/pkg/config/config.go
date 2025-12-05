@@ -11,12 +11,14 @@ import (
 const (
 	ModeDevelopment = "development"
 	ModeDocker      = "docker"
+	ModeKubernetes  = "kubernetes"
 	ModeProduction  = "production"
 )
 
 var modes = map[string]struct{}{
 	ModeDevelopment: {},
 	ModeDocker:      {},
+	ModeKubernetes:  {},
 	ModeProduction:  {},
 }
 

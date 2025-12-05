@@ -65,6 +65,25 @@ docker-seed:
 # ====================================
 # Local Kubernetes with Docker Desktop
 # ====================================
+.PHONY: k8s-apply
+k8s-apply:
+	./scripts/push-local-docker-registry.sh
+
+	kubectl create namespace authify || true
+	kubectl config set-context --current --namespace=authify
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+
+	kubectl apply -f ./k8s
+
+	$(MAKE) -C $(PROJECT_ROOT)/api-gateway k8s-apply
+	$(MAKE) -C $(PROJECT_ROOT)/user-service k8s-apply
+
+.PHONY: k8s-delete
+k8s-delete:
+	kubectl delete -f ./k8s || true
+	$(MAKE) -C $(PROJECT_ROOT)/api-gateway k8s-delete || true
+	$(MAKE) -C $(PROJECT_ROOT)/user-service k8s-delete || true
+
 
 
 # ec2_full_deploy:

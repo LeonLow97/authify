@@ -4,8 +4,8 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: ims-storage-class
-  namespace: inventory-management-system
+  name: authify-storage-class
+  namespace: authify
 # `WaitForFirstConsumer` ensures that the volume is bound to a specific node only after a Pod
 # is scheduled to that node
 volumeBindingMode: WaitForFirstConsumer
