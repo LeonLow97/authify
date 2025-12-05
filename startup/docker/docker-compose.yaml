@@ -1,0 +1,64 @@
+services:
+  api-gateway:
+    build:
+      context: ../../api-gateway
+    restart: always
+    ports:
+      - '8080:8080'
+    environment:
+      MODE: docker
+      REDIS_PASSWORD: 123e4567
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://api-gateway:80/health/readiness']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  user-service:
+    build:
+      context: ../../user-service
+    depends_on:
+      user-postgres:
+        condition: service_healthy
+    restart: always
+    environment:
+      MODE: docker
+      JWT_SECRET_KEY: 493TKVrB0r5vY0hqU3OI28iDQJKhWDkR37OXtgSn1tife3z
+      POSTGRES_USER: authify
+      POSTGRES_PASSWORD: 'dba872b7'
+      POSTGRES_DB: authify_users_db
+      POSTGRES_HOST: user-postgres
+      REDIS_PASSWORD: 123e4567
+    # ports:
+    #   - '50051:50051'
+    deploy:
+      mode: replicated
+      replicas: 3
+
+  user-postgres:
+    container_name: user-postgres
+    image: 'postgres:17'
+    ports:
+      - '5432:5432'
+    restart: always
+    environment:
+      POSTGRES_USER: authify
+      POSTGRES_PASSWORD: 'dba872b7'
+      POSTGRES_DB: authify_users_db
+    volumes:
+      - user-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 10s
+      timeout: 2s
+
+  redis:
+    image: redis:alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: ['redis-server', '--requirepass', '123e4567']
+
+volumes:
+  user-volume:

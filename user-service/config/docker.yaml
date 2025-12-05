@@ -1,0 +1,22 @@
+mode: 'docker'
+
+server:
+  name: user-service
+  port: 50051
+
+jwt:
+  secret_key: CHANGE_ME
+  expiry: 15 # in minutes
+
+postgres:
+  user: CHANGE_ME
+  password: CHANGE_ME
+  host: CHANGE_ME
+  port: 5432
+  db: CHANGE_ME
+
+redis:
+  address: host.docker.internal
+  port: 6379
+  password:
+  database_index: 0

@@ -1,0 +1,22 @@
+mode: development
+
+server:
+  name: localhost
+  port: 50051
+
+jwt:
+  secret_key: 493TKVrB0r5vY0hqU3OI28iDQJKhWDkR37OXtgSn1tife3z
+  expiry: 15 # in minutes
+
+postgres:
+  user: authify
+  password: dba872b7
+  host: localhost
+  port: 5432
+  db: authify_users_db
+
+redis:
+  address: 127.0.0.1
+  port: 6379
+  password:
+  database_index: 0

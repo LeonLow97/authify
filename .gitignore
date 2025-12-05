@@ -1,20 +1,4 @@
-server/**/.env
-
-# misc
 .DS_Store
-.env.*
-
-# yarn cache
-.yarn-cache
-
-# .env files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-node_modules
 
 # AWS
 .elasticbeanstalk
@@ -40,5 +24,13 @@ terraform-provider-*
 *.tfvars.json
 .terraform.lock.hcl
 
-# Ignore crash log files
-crash.log
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# Prometheus
+**/prometheus/data/
+
+# Redis
+*.rdb
