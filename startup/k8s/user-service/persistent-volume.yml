@@ -17,11 +17,6 @@ spec:
   # keeps the PV around for manual cleanup if the PVC is deleted
   persistentVolumeReclaimPolicy: Retain
 
-  # # for prod
-  # awsElasticBlockStore:
-  #   volumeID: <volume_id> # input volume id after creating EBS
-  #   fsType: ext4
-
 ---
 apiVersion: v1
 kind: PersistentVolume
