@@ -51,12 +51,12 @@ redis-server:
 # ====================================
 .PHONY: docker-build
 docker-build:
-	docker-compose -f ./docker/docker-compose.yaml down
-	docker-compose -f ./docker/docker-compose.yaml up --build -d
+	docker-compose -f ./docker/docker-compose.dev.yaml down
+	docker-compose -f ./docker/docker-compose.dev.yaml up --build -d
 
 .PHONY: docker-down
 docker-down:
-	docker-compose -f ./docker/docker-compose.yaml down
+	docker-compose -f ./docker/docker-compose.dev.yaml down
 
 .PHONY: docker-seed
 docker-seed:
@@ -67,7 +67,7 @@ docker-seed:
 # ====================================
 .PHONY: k8s-apply
 k8s-apply:
-	./scripts/push-local-docker-registry.sh
+	./scripts/localhost/push-local-docker-registry.sh
 
 	kubectl create namespace authify || true
 	kubectl config set-context --current --namespace=authify
@@ -84,6 +84,9 @@ k8s-delete:
 	$(MAKE) -C $(PROJECT_ROOT)/api-gateway k8s-delete || true
 	$(MAKE) -C $(PROJECT_ROOT)/user-service k8s-delete || true
 
+# ====================================
+# AWS EC2
+# ====================================
 
 
 # ec2_full_deploy:

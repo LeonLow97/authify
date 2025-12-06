@@ -30,8 +30,6 @@ services:
       POSTGRES_DB: authify_users_db
       POSTGRES_HOST: user-postgres
       REDIS_PASSWORD: 123e4567
-    # ports:
-    #   - '50051:50051'
     deploy:
       mode: replicated
       replicas: 3
