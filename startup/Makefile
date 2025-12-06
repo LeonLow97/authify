@@ -85,8 +85,21 @@ k8s-delete:
 	$(MAKE) -C $(PROJECT_ROOT)/user-service k8s-delete || true
 
 # ====================================
-# AWS EC2
+# AWS Common Commands
 # ====================================
+.PHONY: aws-cli-install
+aws-cli-install:
+	brew install awscli
+	brew install awsebcli
+	aws --version
+	eb --version
+
+# ====================================
+# AWS Elastic Beanstalk
+# ====================================
+# .PHONY: ebs-deploy:
+# ebs-deploy:
+	
 
 
 # ec2_full_deploy:
