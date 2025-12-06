@@ -7,8 +7,8 @@ jwt:
   expiry: 15 # in minutes
 
 postgres:
-  user: FROM_ENV
-  password: FROM_ENV
-  host: FROM_ENV
+  user: CHANGE_ME
+  password: CHANGE_ME
+  host: CHANGE_ME
   port: 5432
-  db: FROM_ENV
+  db: CHANGE_ME

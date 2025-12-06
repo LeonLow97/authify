@@ -5,11 +5,11 @@ server:
   port: 80
 
 user_service:
-  base_url: FROM_ENV
-  port: FROM_ENV
+  base_url: CHANGE_ME
+  port: CHANGE_ME
 
 auth_jwt_token:
-  name: 'authify-token'
+  name: authify-token
   secret: 493TKVrB0r5vY0hqU3OI28iDQJKhWDkR37OXtgSn1tife3zuDYdjwnZmzle4rLHRyxH3bRD0l3tyt6zPVOhgBD8NBkMKjgbeIelP+I+8mUuLfjjJZO56oJPflte43sYO6FJm6H9UtR1etzgYAweiaUkWKmonL7X/6XtS7Czr+Q2fX51oGT1QCsbD6I5L92xmTDH7chhFw7aWoIt+NXAZRQrrXE8GiogK+W53Nll3gBNJ/TBjbbrIyIyUBv6nKk/DeDBYhxPQ89WL4qun6uB9pBwT6q5eDfPeOCXUR5C616ulgnOqqv4cNo5Ndy3tVEXwFWiVeUCKB1WbOCPuF0iazQ==
   max_age: 3600
   domain: 'production.ap-southeast-1.elasticbeanstalk.com'
@@ -19,6 +19,6 @@ auth_jwt_token:
 
 redis:
   port: 6379
-  address: FROM_ENV
-  password: FROM_ENV
+  address: CHANGE_ME
+  password: CHANGE_ME
   database_index: 0

@@ -126,9 +126,9 @@ Find the **RDS Endpoint** from the AWS Console and update the `.yaml` file in Au
 # In docker-compose.yml file
 services:
   authentication-service:
-    image: "xxxxxxxxxxxx.dkr.ecr.ap-southeast-1.amazonaws.com/ims-repository:authentication-service-latest"
+    image: 'xxxxxxxxxxxx.dkr.ecr.ap-southeast-1.amazonaws.com/ims-repository:authentication-service-latest'
     ports:
-      - "50051:50051"
+      - '50051:50051'
     environment:
       MODE: production
       POSTGRES_USER: authentication-postgres
@@ -234,12 +234,12 @@ aws ecr list-images --repository-name ims-repository --region ap-southeast-1 | g
 Elastic Beanstalk uses `docker-compose.yml` file to define multi-container applications.
 
 ```yml
-version: "3.8" # Or another supported version
+version: '3.8' # Or another supported version
 services:
   api-gateway:
-    image: "<AWS_ACCOUNT_ID>.dkr.ecr.ap-southeast-1.amazonaws.com/ims-repository:api-gateway-latest"
+    image: '<AWS_ACCOUNT_ID>.dkr.ecr.ap-southeast-1.amazonaws.com/ims-repository:api-gateway-latest'
     ports:
-      - "80:80"
+      - '80:80'
     environment:
       MODE: production
     deploy:
@@ -251,14 +251,14 @@ services:
     networks:
       - ims-network
   authentication-service:
-    image: "<AWS_ACCOUNT_ID>.dkr.ecr.ap-southeast-1.amazonaws.com/ims-repository:authentication-service-latest"
+    image: '<AWS_ACCOUNT_ID>.dkr.ecr.ap-southeast-1.amazonaws.com/ims-repository:authentication-service-latest'
     ports:
-      - "50051:50051"
+      - '50051:50051'
     environment:
       MODE: production
-      POSTGRES_USER: FROM_ENV
-      POSTGRES_PASSWORD: FROM_ENV
-      POSTGRES_HOST: FROM_ENV
+      POSTGRES_USER: CHANGE_ME
+      POSTGRES_PASSWORD: CHANGE_ME
+      POSTGRES_HOST: CHANGE_ME
       POSTGRES_PORT: 5432
       POSTGRES_DB: imsdb
     deploy:

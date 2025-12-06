@@ -6,12 +6,22 @@ Authify is a production-ready authentication and authorization microservice desi
 
 - [Authify](#authify)
 - [Table of Contents](#table-of-contents)
+- [System Architecture](#system-architecture)
+  - [High Level](#high-level)
 - [Project Setup](#project-setup)
   - [Localhost](#localhost)
   - [Docker](#docker)
   - [Local Kubernetes (Docker Desktop)](#local-kubernetes-docker-desktop)
 - [AWS Deployment](#aws-deployment)
   - [AWS Elastic Beanstalk](#aws-elastic-beanstalk)
+
+# System Architecture
+
+## High Level
+
+<p align="center">
+  <img src="./startup/docs/drawio/authify_architecture.drawio.png" />
+</p>
 
 # Project Setup
 

@@ -9,7 +9,7 @@ user_service:
   port: 50051
 
 auth_jwt_token:
-  name: 'authify-token'
+  name: authify-token
   secret: 493TKVrB0r5vY0hqU3OI28iDQJKhWDkR37OXtgSn1tife3z
   max_age: 3600
   domain: 127.0.0.1
