@@ -28,6 +28,30 @@ func LoadConfig() (*Config, error) {
 	vpr.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	vpr.AutomaticEnv()
 
+	envKeys := []string{
+		"server.base_url",
+		"server.port",
+		"user_service.base_url",
+		"user_service.port",
+		"auth_jwt_token.name",
+		"auth_jwt_token.secret",
+		"auth_jwt_token.max_age",
+		"auth_jwt_token.domain",
+		"auth_jwt_token.secure",
+		"auth_jwt_token.http_only",
+		"auth_jwt_token.path",
+		"redis.port",
+		"redis.database_index",
+		"redis.address",
+		"redis.password",
+	}
+
+	for _, key := range envKeys {
+		if err := vpr.BindEnv(key); err != nil {
+			return nil, fmt.Errorf("failed binding env var %s: %w", key, err)
+		}
+	}
+
 	mode := vpr.GetString("MODE")
 	if mode == "" {
 		mode = ModeDevelopment

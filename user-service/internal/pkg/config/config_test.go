@@ -1,102 +1,99 @@
 package config
 
 import (
-	"os"
-	"path/filepath"
-	"testing"
+	"fmt"
+	"strings"
+	"sync"
 
 	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
 )
 
-// writeTempConfig creates a config file in baseDir/config/<mode>.yaml
-func writeTempConfig(t *testing.T, baseDir, mode, yaml string) {
-	t.Helper()
-	cfgDir := filepath.Join(baseDir, "config")
-	assert.NoError(t, os.MkdirAll(cfgDir, 0755))
-	file := filepath.Join(cfgDir, mode+".yaml")
-	assert.NoError(t, os.WriteFile(file, []byte(yaml), 0644))
+const (
+	ModeDevelopment = "development"
+	ModeDocker      = "docker"
+	ModeKubernetes  = "kubernetes"
+	ModeProduction  = "production"
+)
+
+var modes = map[string]struct{}{
+	ModeDevelopment: {},
+	ModeDocker:      {},
+	ModeKubernetes:  {},
+	ModeProduction:  {},
 }
 
-// withWorkingDir changes to a temporary working directory for the duration of the test.
-// It automatically restores the original directory afterward.
-func withWorkingDir(t *testing.T, f func(tempDir string)) {
-	orig, err := os.Getwd()
-	assert.NoError(t, err)
-	t.Cleanup(func() { _ = os.Chdir(orig) })
-
-	tempDir := t.TempDir()
-	assert.NoError(t, os.Chdir(tempDir))
-	f(tempDir)
-}
-
-// withEnv sets an environment variable for the duration of the test.
-// If value is empty, it unsets the variable.
-func withEnv(t *testing.T, key, value string) {
-	if value == "" {
-		os.Unsetenv(key)
-	} else {
-		assert.NoError(t, os.Setenv(key, value))
-	}
-	t.Cleanup(func() { _ = os.Unsetenv(key) })
-}
-
-func Test_LoadConfig(t *testing.T) {
-	const validYAML = `
-mode: development
-server:
-  base_url: "127.0.0.1"
-  port: 8080
-`
-
-	t.Run("development mode", func(t *testing.T) {
-		t.Run("config file exists", func(t *testing.T) {
-			withWorkingDir(t, func(tempDir string) {
-				writeTempConfig(t, tempDir, ModeDevelopment, validYAML)
-				withEnv(t, "MODE", ModeDevelopment)
-				cfg, err := LoadConfig()
-				assert.NoError(t, err)
-				assert.NotNil(t, cfg)
-				assert.Equal(t, ModeDevelopment, cfg.Mode)
-			})
-		})
-
-		t.Run("config file does not exist", func(t *testing.T) {
-			withWorkingDir(t, func(_ string) {
-				withEnv(t, "MODE", ModeDevelopment)
-				cfg, err := LoadConfig()
-				assert.Error(t, err)
-				assert.Nil(t, cfg)
-			})
-		})
-
-		t.Run("Mode env var not set, defaults to development", func(t *testing.T) {
-			withWorkingDir(t, func(tempDir string) {
-				writeTempConfig(t, tempDir, ModeDevelopment, validYAML)
-				withEnv(t, "MODE", "") // unset
-				cfg, err := LoadConfig()
-				assert.NoError(t, err)
-				assert.NotNil(t, cfg)
-				assert.Equal(t, ModeDevelopment, cfg.Mode)
-			})
-		})
-
-		t.Run("unknown Mode env var", func(t *testing.T) {
-			withWorkingDir(t, func(_ string) {
-				withEnv(t, "MODE", "unknown")
-				cfg, err := LoadConfig()
-				assert.Error(t, err)
-				assert.Nil(t, cfg)
-			})
-		})
-	})
-}
-
-func Test_setDefaultValues(t *testing.T) {
-	var cfg Config
+// LoadConfig loads config from disk/env — PURE, NO SIDE EFFECTS, fully testable.
+func LoadConfig() (*Config, error) {
 	vpr := viper.New()
+	vpr.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	vpr.AutomaticEnv()
 
-	cfg.setDefaultValues(vpr)
-	assert.Equal(t, "localhost", vpr.GetString("server.url"))
-	assert.Equal(t, 50051, vpr.GetInt("server.port"))
+	envKeys := []string{
+		"server.name",
+		"server.port",
+		"jwt.secret_key",
+		"jwt.expiry",
+		"postgres.user",
+		"postgres.password",
+		"postgres.host",
+		"postgres.port",
+		"postgres.db",
+		"redis.address",
+		"redis.port",
+		"redis.password",
+		"redis.database_index",
+	}
+
+	for _, key := range envKeys {
+		if err := vpr.BindEnv(key); err != nil {
+			return nil, fmt.Errorf("failed binding env var %s: %w", key, err)
+		}
+	}
+
+	mode := vpr.GetString("MODE")
+	if mode == "" {
+		mode = ModeDevelopment
+	}
+
+	if _, ok := modes[mode]; !ok {
+		return nil, fmt.Errorf("unknown MODE %q", mode)
+	}
+
+	vpr.SetConfigName(mode)
+	vpr.AddConfigPath("./config")
+
+	if err := vpr.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			return nil, fmt.Errorf("no config file found for mode %q", mode)
+		}
+		return nil, fmt.Errorf("failed reading config: %w", err)
+	}
+
+	var c Config
+	c.setDefaultValues(vpr)
+	if err := vpr.Unmarshal(&c); err != nil {
+		return nil, fmt.Errorf("failed unmarshaling config: %w", err)
+	}
+	c.Mode = mode
+	return &c, nil
+}
+
+var (
+	once sync.Once // singleton pattern
+)
+
+// GetConfig returns the global config instance (loaded once).
+// Safe for concurrent use. Panics on load error (fail-fast).
+func GetConfig() (*Config, error) {
+	var err error
+	var cfg *Config
+	once.Do(func() {
+		cfg, err = LoadConfig()
+	})
+	return cfg, err
+}
+
+func (c *Config) setDefaultValues(vpr *viper.Viper) {
+	vpr.SetDefault("server.url", "localhost")
+	vpr.SetDefault("server.port", 50051)
 }

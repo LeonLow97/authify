@@ -1,36 +1,14 @@
 .DS_Store
 
-# AWS
-.elasticbeanstalk
-variables.txt
-ssh_commands.txt
-*.pem
-*.pub
-*.ssh
+# AWS CLI runtime state
+/startup/awscli/.env
+/startup/awscli/variables.env
+/startup/awscli/*.pem
 
-# Ignore docker-compose.yml in all subdirectories as this was used for AWS deployment
-**/docker-compose.yml
-
-# Ignore the .terraform directory, which contains downloaded modules
+# Terraform local state
 .terraform/
-
-# Ignore terraform provider binaries
-terraform-provider-*
-
-# Ignore Terraform state files and backups
 *.tfstate
 *.tfstate.*
 *.tfvars
 *.tfvars.json
-.terraform.lock.hcl
-
-# Elastic Beanstalk Files
-.elasticbeanstalk/*
-!.elasticbeanstalk/*.cfg.yml
-!.elasticbeanstalk/*.global.yml
-
-# Prometheus
-**/prometheus/data/
-
-# Redis
-*.rdb
+/startup/terraform/modules/ec2/.ssh/

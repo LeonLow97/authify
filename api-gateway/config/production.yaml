@@ -1,24 +1,23 @@
 mode: production
 
 server:
-  base_url: api-gateway
+  base_url: 0.0.0.0 # ALB connect to EC2 in private subnet
   port: 80
 
 user_service:
-  base_url: CHANGE_ME
-  port: CHANGE_ME
+  base_url: 0.0.0.0
+  port: 50051
 
 auth_jwt_token:
   name: authify-token
-  secret: 493TKVrB0r5vY0hqU3OI28iDQJKhWDkR37OXtgSn1tife3zuDYdjwnZmzle4rLHRyxH3bRD0l3tyt6zPVOhgBD8NBkMKjgbeIelP+I+8mUuLfjjJZO56oJPflte43sYO6FJm6H9UtR1etzgYAweiaUkWKmonL7X/6XtS7Czr+Q2fX51oGT1QCsbD6I5L92xmTDH7chhFw7aWoIt+NXAZRQrrXE8GiogK+W53Nll3gBNJ/TBjbbrIyIyUBv6nKk/DeDBYhxPQ89WL4qun6uB9pBwT6q5eDfPeOCXUR5C616ulgnOqqv4cNo5Ndy3tVEXwFWiVeUCKB1WbOCPuF0iazQ==
   max_age: 3600
-  domain: 'production.ap-southeast-1.elasticbeanstalk.com'
   secure: false
   http_only: true
   path: '/'
+  secret: CHANGE_ME
+  domain: CHANGE_ME
 
 redis:
   port: 6379
-  address: CHANGE_ME
-  password: CHANGE_ME
   database_index: 0
+  address: CHANGE_ME
