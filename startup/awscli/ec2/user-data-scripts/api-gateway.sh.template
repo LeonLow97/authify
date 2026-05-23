@@ -1,0 +1,67 @@
+#!/bin/bash
+
+set -euo pipefail
+
+required_ssm_parameter() {
+  local name="$1"
+  local decrypt="${2:-false}"
+  local args=(--name "${name}" --query 'Parameter.Value' --output text)
+
+  if [[ "${decrypt}" == "true" ]]; then
+    args+=(--with-decryption)
+  fi
+
+  aws ssm get-parameter "${args[@]}"
+}
+
+optional_ssm_parameter() {
+  local name="$1"
+  local decrypt="${2:-false}"
+  local args=(--name "${name}" --query 'Parameter.Value' --output text)
+
+  if [[ "${decrypt}" == "true" ]]; then
+    args+=(--with-decryption)
+  fi
+
+  aws ssm get-parameter "${args[@]}" 2>/dev/null || true
+}
+
+METADATA_TOKEN="$(curl -fsS -X PUT http://169.254.169.254/latest/api/token \
+  -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600')"
+REGION="$(curl -fsS -H "X-aws-ec2-metadata-token: ${METADATA_TOKEN}" \
+  http://169.254.169.254/latest/meta-data/placement/region)"
+export AWS_DEFAULT_REGION="${REGION}"
+AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query 'Account' --output text)"
+REDIS_ADDRESS="$(required_ssm_parameter /authify/elasticache/endpoint)"
+# Temporary workaround: this Redis cluster does not have AUTH enabled yet.
+# If we keep pulling the old SSM password here, the API Gateway sends AUTH and exits.
+# REDIS_PASSWORD="$(optional_ssm_parameter /authify/elasticache/password true)"
+AUTH_JWT_TOKEN_SECRET="$(required_ssm_parameter /authify/auth/jwt-secret true)"
+AUTH_JWT_TOKEN_DOMAIN="$(required_ssm_parameter /authify/auth/jwt-domain)"
+ECR_API_GATEWAY_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${ECR_AUTHIFY_REPOSITORY}:${DOCKER_AUTHIFY_API_GATEWAY_IMAGE_TAG}"
+
+sudo yum update -y
+sudo yum install -y docker
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker ec2-user
+
+aws ecr get-login-password --region "${REGION}" \
+  | sudo docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
+
+sudo docker pull "${ECR_API_GATEWAY_IMAGE}"
+sudo docker rm -f api-gateway >/dev/null 2>&1 || true
+
+sudo docker run -d \
+  --name api-gateway \
+  --restart=always \
+  -p ${PORT_API_GATEWAY}:${PORT_API_GATEWAY} \
+  -e MODE=production \
+  -e SERVER_PORT=${PORT_API_GATEWAY} \
+  -e USER_SERVICE_BASE_URL=${USER_SERVICE_BASE_URL} \
+  -e USER_SERVICE_PORT=${USER_SERVICE_PORT} \
+  -e REDIS_ADDRESS="${REDIS_ADDRESS}" \
+  -e REDIS_PORT=6379 \
+  -e AUTH_JWT_TOKEN_SECRET="${AUTH_JWT_TOKEN_SECRET}" \
+  -e AUTH_JWT_TOKEN_DOMAIN="${AUTH_JWT_TOKEN_DOMAIN}" \
+  "${ECR_API_GATEWAY_IMAGE}"

@@ -1,3 +1,5 @@
+mode: production
+
 server:
   name: authentication-service
   port: 50051
@@ -12,3 +14,9 @@ postgres:
   host: CHANGE_ME
   port: 5432
   db: CHANGE_ME
+
+redis:
+  address: CHANGE_ME
+  port: 6379
+  password: ''
+  database_index: 0

@@ -85,8 +85,27 @@ k8s-delete:
 	$(MAKE) -C $(PROJECT_ROOT)/user-service k8s-delete || true
 
 # ====================================
+# AWS Common Commands
+# ====================================
+.PHONY: aws-cli-install
+aws-cli-install:
+	brew install awscli
+	brew install awsebcli
+	aws --version
+	eb --version
+
+
+# ====================================
+# AWS Elastic Beanstalk
+# ====================================
+
+
+
+# ====================================
 # AWS EC2
 # ====================================
+# ./vpc/vpc.sh&& ./rds/rds.sh && ./iam/iam.sh && ./s3/s3.sh && ./ec2/bastion.sh
+# ./ec2/bastion-clean.sh && ./s3/s3-clean.sh && ./iam/iam-clean.sh && ./rds/rds-clean.sh  && ./vpc/vpc-clean.sh
 
 
 # ec2_full_deploy:

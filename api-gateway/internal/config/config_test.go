@@ -18,6 +18,14 @@ func writeTempConfig(t *testing.T, baseDir, mode, yaml string) {
 	assert.NoError(t, os.WriteFile(file, []byte(yaml), 0644))
 }
 
+func writeTempRateLimitConfig(t *testing.T, baseDir string) {
+	t.Helper()
+	cfgDir := filepath.Join(baseDir, "config")
+	assert.NoError(t, os.MkdirAll(cfgDir, 0755))
+	file := filepath.Join(cfgDir, "ratelimit.yaml")
+	assert.NoError(t, os.WriteFile(file, []byte("auth: {}\n"), 0644))
+}
+
 // withWorkingDir changes to a temporary working directory for the duration of the test.
 // It automatically restores the original directory afterward.
 func withWorkingDir(t *testing.T, f func(tempDir string)) {
@@ -53,6 +61,7 @@ server:
 		t.Run("config file exists", func(t *testing.T) {
 			withWorkingDir(t, func(tempDir string) {
 				writeTempConfig(t, tempDir, ModeDevelopment, validYAML)
+				writeTempRateLimitConfig(t, tempDir)
 				withEnv(t, "MODE", ModeDevelopment)
 				cfg, err := LoadConfig()
 				assert.NoError(t, err)
@@ -73,6 +82,7 @@ server:
 		t.Run("Mode env var not set, defaults to development", func(t *testing.T) {
 			withWorkingDir(t, func(tempDir string) {
 				writeTempConfig(t, tempDir, ModeDevelopment, validYAML)
+				writeTempRateLimitConfig(t, tempDir)
 				withEnv(t, "MODE", "") // unset
 				cfg, err := LoadConfig()
 				assert.NoError(t, err)
@@ -89,6 +99,49 @@ server:
 				assert.Nil(t, cfg)
 			})
 		})
+	})
+}
+
+func Test_LoadConfig_EnvOverridesNestedValues(t *testing.T) {
+	const productionYAML = `
+mode: production
+server:
+  base_url: "0.0.0.0"
+  port: 80
+user_service:
+  base_url: "0.0.0.0"
+  port: 50051
+auth_jwt_token:
+  name: authify-token
+  max_age: 3600
+  secure: false
+  http_only: true
+  path: /
+  secret: CHANGE_ME
+  domain: CHANGE_ME
+redis:
+  port: 6379
+  database_index: 0
+  address: CHANGE_ME
+  password: CHANGE_ME
+`
+
+	withWorkingDir(t, func(tempDir string) {
+		writeTempConfig(t, tempDir, ModeProduction, productionYAML)
+		writeTempRateLimitConfig(t, tempDir)
+		withEnv(t, "MODE", ModeProduction)
+		withEnv(t, "SERVER_PORT", "8080")
+		withEnv(t, "USER_SERVICE_BASE_URL", "10.0.3.10")
+		withEnv(t, "REDIS_ADDRESS", "authify-redis.internal")
+		withEnv(t, "AUTH_JWT_TOKEN_DOMAIN", "localhost")
+
+		cfg, err := LoadConfig()
+		assert.NoError(t, err)
+		assert.NotNil(t, cfg)
+		assert.Equal(t, 8080, cfg.Server.Port)
+		assert.Equal(t, "10.0.3.10", cfg.UserService.BaseUrl)
+		assert.Equal(t, "authify-redis.internal", cfg.RedisConfig.Address)
+		assert.Equal(t, "localhost", cfg.AuthJWTToken.Domain)
 	})
 }
 
